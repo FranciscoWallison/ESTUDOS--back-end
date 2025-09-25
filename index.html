@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Quiz Backend — Simples (HTML + JS)</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    body { margin: 24px; line-height: 1.45; }
+    h1 { margin: 0 0 12px; font-size: 20px; }
+    .hint { color:#555; font-size: 12px; margin-bottom: 16px; }
+    .q { border:1px solid #ddd; border-radius:8px; padding:12px; margin:12px 0; }
+    .q h2 { font-size: 16px; margin:0 0 8px; }
+    details { margin: 6px 0 8px; }
+    .opts { display:grid; gap:6px; }
+    .opt { display:flex; gap:8px; align-items:flex-start; }
+    .opt input { margin-top: 2px; }
+    .actions { position: sticky; bottom: 0; background: #fff; padding: 12px 0; display: flex; gap: 8px; border-top: 1px solid #eee; margin-top: 16px; }
+    button { padding: 10px 14px; border-radius: 8px; border:1px solid #ccc; cursor: pointer; }
+    button.primary { background:#0b5cff; color:#fff; border-color:#0b5cff; }
+    .score { margin-left:auto; font-weight:600; }
+    .correto  { border-color:#1e8e3e; background:#f0fbf3; }
+    .errado   { border-color:#d93025; background:#fff5f4; }
+    .nota { font-size:12px; color:#333; margin-top:6px; }
+    .gabarito { white-space: pre-wrap; background:#f7f7f7; border:1px dashed #bbb; padding:10px; border-radius:8px; display:none; }
+    .footer { font-size:12px; color:#666; margin-top:10px; }
+  </style>
+</head>
+<body>
+  <h1>Quiz — Backend (mini-história → alternativas)</h1>
+  <div class="hint">Leia a mini-história (opcional), escolha a alternativa e clique em <b>Conferir respostas</b>.</div>
+  <div id="app"></div>
+
+  <div class="actions">
+    <button class="primary" id="btnCorrigir">Conferir respostas</button>
+    <button id="btnLimpar">Limpar</button>
+    <button id="btnGabarito">Mostrar gabarito</button>
+    <div class="score" id="placar">0/0</div>
+  </div>
+
+  <div class="gabarito" id="gabaritoBox"></div>
+  <div class="footer">Simples, sem dependências. HTML + JS puro.</div>
+
+  <script>
+    const quiz = [
+      {
+        n: 1,
+        titulo: "Objetivo do backend",
+        historia: "Alex clica em “Seguir” e nada muda no banco. Isabella lembra: sem servidor não há quem grave “Alex segue Isabella” nem quem monte o feed.",
+        alternativas: [
+          "Executar lógicas complexas no navegador.",
+          "Gerenciar dados, processar solicitações e responder.",
+          "Só criar interfaces para o frontend.",
+          "Criar animações no cliente.",
+          "Executar apenas tarefas com bancos locais."
+        ],
+        correta: "b"
+      },
+      {
+        n: 2,
+        titulo: "Linguagens comuns no backend",
+        historia: "O chat precisa de conexões em tempo real. O time avalia Node.js para websockets, Python para ML, Java para sistemas bancários, PHP pelo ecossistema.",
+        alternativas: [
+          "Somente PHP e Node.js.",
+          "Python, Java, PHP, Node.js, etc., conforme a necessidade.",
+          "Apenas linguagens de frontend.",
+          "HTML e CSS sempre.",
+          "Exclusivamente Ruby."
+        ],
+        correta: "b"
+      },
+      {
+        n: 3,
+        titulo: "Papel do servidor web",
+        historia: "O site cai; a app está de pé, mas o Nginx parou. Sem o “porteiro”, as requisições não chegam à aplicação.",
+        alternativas: [
+          "Armazenar todos os dados sem interação.",
+          "Receber solicitações, processá-las e responder.",
+          "Servir só páginas estáticas.",
+          "Criar lógica de negócio no frontend.",
+          "Servir apenas imagens e CSS."
+        ],
+        correta: "b"
+      },
+      {
+        n: 4,
+        titulo: "Por que segurança no backend",
+        historia: "Concatenaram entrada em SQL; um atacante poderia apagar a tabela. Falta validação e uso de parâmetros.",
+        alternativas: [
+          "Proteger só a interface.",
+          "Evitar mudanças visuais.",
+          "Garantir que o código não seja copiado.",
+          "Proteger dados, impedir ataques e validar entradas.",
+          "Evitar exclusivamente falhas de banco."
+        ],
+        correta: "d"
+      },
+      {
+        n: 5,
+        titulo: "Separação de responsabilidades",
+        historia: "Trocaram o layout sem tocar no backend. Camadas independentes agilizam evolução e manutenção.",
+        alternativas: [
+          "Só facilita animações.",
+          "Melhora sempre a comunicação dev–usuário.",
+          "Frontend, backend e BD operam de forma independente.",
+          "Cria interfaces mais amigáveis.",
+          "Só reduz memória no servidor."
+        ],
+        correta: "c"
+      },
+      {
+        n: 6,
+        titulo: "Manutenção contínua",
+        historia: "Sai CVE crítica numa dependência. Atualizar agora evita incidente amanhã.",
+        alternativas: [
+          "Garante escala, mas não segurança.",
+          "Corrigir só problemas visuais.",
+          "Manter atualizado, seguro e funcional.",
+          "Evitar uso indevido.",
+          "Só adicionar features rápido."
+        ],
+        correta: "c"
+      },
+      {
+        n: 7,
+        titulo: "Escalabilidade",
+        historia: "Tráfego dobra após destaque em blog; a infra sobe instâncias e aguenta.",
+        alternativas: [
+          "Melhorar só em mobile.",
+          "Duplicar servidores sempre.",
+          "Suportar aumento de tráfego e demanda.",
+          "Criar mais páginas rapidamente.",
+          "Só adicionar bancos extras sem plano."
+        ],
+        correta: "c"
+      },
+      {
+        n: 8,
+        titulo: "Evolução Web 1.0 → 3.0",
+        historia: "De páginas estáticas, para interação em massa, para controle/automação mais distribuídos.",
+        alternativas: [
+          "1.0 dinâmica; 3.0 estática e mais interativa.",
+          "2.0 trouxe blockchain/ML; 3.0 focou em hiperlinks.",
+          "1.0 estática; 2.0 interativa/colaborativa; 3.0 descentralização/automação.",
+          "2.0 introduziu HTML/CSS; 3.0 sem navegador.",
+          "1.0 e 3.0 focam em redes sociais; 2.0 em descentralização."
+        ],
+        correta: "c"
+      },
+      {
+        n: 9,
+        titulo: "O que NÃO é linguagem de backend",
+        historia: "Tentaram “calcular” idade em HTML. HTML só marca estrutura; não executa lógica.",
+        alternativas: [
+          "PHP",
+          "Python",
+          "JavaScript (Node.js)",
+          "HTML",
+          "Ruby"
+        ],
+        correta: "d"
+      },
+      {
+        n: 10,
+        titulo: "Arquitetura web — INCORRETA",
+        historia: "Propuseram calcular reputação no frontend. Fácil de adulterar; regra de negócio deve ficar no backend.",
+        alternativas: [
+          "Frontend interage com usuários e processa lógica de negócios.",
+          "Backend cuida da lógica e do BD.",
+          "Separação facilita manutenção e escala.",
+          "Frontend usa HTML/CSS/JS.",
+          "Backend usa Node.js/Django/Rails para processar solicitações."
+        ],
+        correta: "a"
+      },
+      {
+        n: 11,
+        titulo: "Boas práticas",
+        historia: "Função de 300 linhas sem testes atrasou tudo. Com testes, alteração seria segura.",
+        alternativas: [
+          "Comentar cada linha.",
+          "Preferir funções longas.",
+          "Variáveis genéricas evitam confusão.",
+          "Testes unitários garantem funcionamento em cenários diferentes.",
+          "Sem documentação se o código “fala por si”."
+        ],
+        correta: "d"
+      }
+    ];
+
+    const letras = ["a","b","c","d","e"];
+
+    const app = document.getElementById("app");
+
+    function renderQuiz() {
+      app.innerHTML = "";
+      quiz.forEach((q, qi) => {
+        const fs = document.createElement("fieldset");
+        fs.className = "q";
+        fs.id = `q${q.n}`;
+
+        const h2 = document.createElement("h2");
+        h2.textContent = `${q.n}) ${q.titulo}`;
+        fs.appendChild(h2);
+
+        const det = document.createElement("details");
+        const sum = document.createElement("summary");
+        sum.textContent = "Mini-história";
+        det.appendChild(sum);
+        const p = document.createElement("p");
+        p.textContent = q.historia;
+        det.appendChild(p);
+        fs.appendChild(det);
+
+        const opts = document.createElement("div");
+        opts.className = "opts";
+
+        q.alternativas.forEach((txt, oi) => {
+          const wrap = document.createElement("label");
+          wrap.className = "opt";
+          const input = document.createElement("input");
+          input.type = "radio";
+          input.name = `q${q.n}`;
+          input.value = letras[oi];
+          const span = document.createElement("span");
+          span.textContent = `${letras[oi]}) ${txt}`;
+          wrap.appendChild(input);
+          wrap.appendChild(span);
+          opts.appendChild(wrap);
+        });
+
+        fs.appendChild(opts);
+        app.appendChild(fs);
+      });
+
+      document.getElementById("placar").textContent = `0/${quiz.length}`;
+      document.getElementById("gabaritoBox").style.display = "none";
+    }
+
+    function corrigir() {
+      let acertos = 0;
+
+      quiz.forEach((q) => {
+        const box = document.getElementById(`q${q.n}`);
+        box.classList.remove("correto", "errado");
+        const marcado = document.querySelector(`input[name="q${q.n}"]:checked`);
+        // remove notas antigas
+        const old = box.querySelector(".nota");
+        if (old) old.remove();
+
+        if (!marcado) {
+          const nota = document.createElement("div");
+          nota.className = "nota";
+          nota.textContent = "Sem resposta.";
+          box.appendChild(nota);
+          return;
+        }
+
+        if (marcado.value === q.correta) {
+          acertos++;
+          box.classList.add("correto");
+          const nota = document.createElement("div");
+          nota.className = "nota";
+          nota.textContent = "✔ Correto";
+          box.appendChild(nota);
+        } else {
+          box.classList.add("errado");
+          const nota = document.createElement("div");
+          nota.className = "nota";
+          nota.textContent = `✘ Incorreto — correto: (${q.correta})`;
+          box.appendChild(nota);
+        }
+      });
+
+      document.getElementById("placar").textContent = `${acertos}/${quiz.length}`;
+    }
+
+    function limpar() {
+      document.querySelectorAll('input[type="radio"]').forEach(i => i.checked = false);
+      document.querySelectorAll(".q").forEach(q => q.classList.remove("correto","errado"));
+      document.querySelectorAll(".nota").forEach(n => n.remove());
+      document.getElementById("placar").textContent = `0/${quiz.length}`;
+      document.getElementById("gabaritoBox").style.display = "none";
+    }
+
+    function mostrarGabarito() {
+      const linhas = quiz.map(q => `${q.n}. ${q.correta}`).join("\n");
+      const box = document.getElementById("gabaritoBox");
+      box.textContent = "Gabarito:\n" + linhas;
+      box.style.display = "block";
+      // marca automaticamente as corretas (sem pontuação)
+      quiz.forEach((q) => {
+        const input = document.querySelector(`input[name="q${q.n}"][value="${q.correta}"]`);
+        if (input) input.checked = true;
+      });
+    }
+
+    // eventos
+    document.getElementById("btnCorrigir").addEventListener("click", corrigir);
+    document.getElementById("btnLimpar").addEventListener("click", limpar);
+    document.getElementById("btnGabarito").addEventListener("click", mostrarGabarito);
+
+    // inicializa
+    renderQuiz();
+  </script>
+</body>
+</html>
