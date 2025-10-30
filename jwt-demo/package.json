@@ -1,0 +1,21 @@
+{
+  "name": "jwt-demo",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "server": "node server.js",
+    "client": "node client.js",
+    "dev": "concurrently -n srv,cli -c auto \"node server.js\" \"wait-on tcp:3000 && node client.js\"",
+    "dev:once": "concurrently -k -n srv,cli -c auto \"node server.js\" \"wait-on tcp:3000 && node client.js\"",
+    "test": "echo \"no tests\" && exit 0"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0",
+    "wait-on": "^8.0.0"
+  }
+}
