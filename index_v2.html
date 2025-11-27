@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Quiz Backend — Conceitos Gerais</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    body { margin: 24px; line-height: 1.45; }
+    h1 { margin: 0 0 12px; font-size: 20px; }
+    .hint { color:#555; font-size: 12px; margin-bottom: 16px; }
+    .q { border:1px solid #ddd; border-radius:8px; padding:12px; margin:12px 0; }
+    .q h2 { font-size: 16px; margin:0 0 8px; }
+    details { margin: 6px 0 8px; }
+    .opts { display:grid; gap:6px; }
+    .opt { display:flex; gap:8px; align-items:flex-start; }
+    .opt input { margin-top: 2px; }
+    .actions { position: sticky; bottom: 0; background: #fff; padding: 12px 0; display: flex; gap: 8px; border-top: 1px solid #eee; margin-top: 16px; }
+    button { padding: 10px 14px; border-radius: 8px; border:1px solid #ccc; cursor: pointer; }
+    button.primary { background:#0b5cff; color:#fff; border-color:#0b5cff; }
+    .score { margin-left:auto; font-weight:600; }
+    .correto  { border-color:#1e8e3e; background:#f0fbf3; }
+    .errado   { border-color:#d93025; background:#fff5f4; }
+    .nota { font-size:12px; color:#333; margin-top:6px; }
+    .gabarito { white-space: pre-wrap; background:#f7f7f7; border:1px dashed #bbb; padding:10px; border-radius:8px; display:none; }
+    .footer { font-size:12px; color:#666; margin-top:10px; }
+  </style>
+</head>
+<body>
+  <h1>Quiz — Conceitos de Backend e Arquitetura</h1>
+  <div class="hint">Baseado nos textos sobre Auth, DBs, APIs e Protocolos. Escolha a alternativa e clique em <b>Conferir respostas</b>.</div>
+  <div id="app"></div>
+
+  <div class="actions">
+    <button class="primary" id="btnCorrigir">Conferir respostas</button>
+    <button id="btnLimpar">Limpar</button>
+    <button id="btnGabarito">Mostrar gabarito</button>
+    <div class="score" id="placar">0/0</div>
+  </div>
+
+  <div class="gabarito" id="gabaritoBox"></div>
+  <div class="footer">Gerado a partir dos textos fornecidos. HTML + JS puro.</div>
+
+  <script>
+    const quiz = [
+      {
+        n: 1,
+        titulo: "Variáveis de Ambiente",
+        historia: "Armazenam chaves de API e senhas. Variam entre desenvolvimento, teste e produção para não expor dados sensíveis no código.",
+        alternativas: [
+          "Servem apenas para deixar o código mais rápido.",
+          "São usadas para criar animações no frontend.",
+          "Permitem ajustar configurações por ambiente sem modificar o código da aplicação.",
+          "Substituem o banco de dados.",
+          "São exclusivas para sistemas Windows."
+        ],
+        correta: "c"
+      },
+      {
+        n: 2,
+        titulo: "Especificação de Requisitos",
+        historia: "Descreve o passo a passo do que ocorre a cada ação do usuário. O processo inclui viabilidade, verificação, especificação e validação.",
+        alternativas: [
+          "Serve apenas para burocratizar o projeto.",
+          "Garante que o desenvolvimento seja assertivo e alinhado às expectativas do cliente.",
+          "Substitui a necessidade de testes de software.",
+          "É feita apenas após o software estar pronto.",
+          "Foca exclusivamente no design visual das telas."
+        ],
+        correta: "b"
+      },
+      {
+        n: 3,
+        titulo: "Funcionamento do JWT",
+        historia: "O servidor gera um 'pacote' (JSON) assinado digitalmente. O cliente envia esse token no cabeçalho Authorization em requisições futuras.",
+        alternativas: [
+          "O servidor armazena o token em um banco de dados relacional.",
+          "O cliente descriptografa a senha do usuário contida no token.",
+          "O token é usado apenas para recuperar senha.",
+          "O servidor verifica a validade da assinatura usando sua chave secreta.",
+          "O JWT é um formato de imagem compacta."
+        ],
+        correta: "d"
+      },
+      {
+        n: 4,
+        titulo: "Limitação de Taxa (Rate Limiting)",
+        historia: "Ao saber quem é o cliente (via API), pode-se impor limites, como 1000 chamadas por hora.",
+        alternativas: [
+          "Serve para cobrar mais caro do usuário.",
+          "Aumenta a latência da rede propositalmente.",
+          "Garante estabilidade e previne abusos bloqueando excesso de requisições.",
+          "Serve para impedir que o usuário faça login.",
+          "Limita o tamanho do banco de dados."
+        ],
+        correta: "c"
+      },
+      {
+        n: 5,
+        titulo: "SQL vs NoSQL",
+        historia: "O SQL (Relacional) usa tabelas e esquemas rígidos (ex: users). O NoSQL armazena dados de forma flexível (documentos, grafos).",
+        alternativas: [
+          "SQL é para documentos e NoSQL para tabelas.",
+          "A principal diferença é a organização e armazenamento dos dados (estruturado vs flexível).",
+          "NoSQL não permite armazenar grandes quantidades de dados.",
+          "SQL não permite deletar registros.",
+          "Ambos funcionam exatamente da mesma forma."
+        ],
+        correta: "b"
+      },
+      {
+        n: 6,
+        titulo: "Protocol Buffers",
+        historia: "Serializa dados em formato binário compacto. É comparado frequentemente com JSON e XML.",
+        alternativas: [
+          "Sua principal vantagem é a legibilidade humana.",
+          "É mais lento que o JSON, mas mais seguro.",
+          "Eficiência em tamanho e velocidade de serialização/transferência.",
+          "Só funciona em navegadores antigos.",
+          "É um protocolo exclusivo para envio de e-mails."
+        ],
+        correta: "c"
+      },
+      {
+        n: 7,
+        titulo: "Recursos e Verbos HTTP (REST)",
+        historia: "O sistema web é modelado como recursos (URI). Operações usam métodos padrão (GET, POST, PUT, DELETE).",
+        alternativas: [
+          "O método GET é usado para apagar dados.",
+          "Os verbos HTTP indicam o tipo de solicitação a ser feita no recurso.",
+          "URIs servem para estilizar a página.",
+          "O código 404 indica sucesso na operação.",
+          "REST exige o uso exclusivo de XML."
+        ],
+        correta: "b"
+      },
+      {
+        n: 8,
+        titulo: "JSON vs XML",
+        historia: "XML usa tags e é mais verboso. JSON usa chave-valor e é mais leve, sendo amplamente suportado na Web.",
+        alternativas: [
+          "JSON é mais pesado que XML.",
+          "XML é mais fácil de processar com JavaScript nativo que JSON.",
+          "JSON permite personalização de tags, XML não.",
+          "JSON é mais leve e fácil de transmitir; XML é mais flexível com tags.",
+          "Ambos são formatos binários."
+        ],
+        correta: "d"
+      },
+      {
+        n: 9,
+        titulo: "Conceito de API",
+        historia: "Como no exemplo da previsão do tempo: sua aplicação não coleta os dados, ela acessa uma fonte externa via API.",
+        alternativas: [
+          "É um banco de dados local.",
+          "É uma interface que permite acessar serviços ou dados de terceiros.",
+          "É uma linguagem de programação visual.",
+          "Serve para proteger o computador de vírus.",
+          "É um hardware conectado ao servidor."
+        ],
+        correta: "b"
+      },
+      {
+        n: 10,
+        titulo: "Arquitetura em Camadas",
+        historia: "Apresentação solicita à Lógica, que recupera do Banco de Dados. Camadas independentes.",
+        alternativas: [
+          "Aumenta a complexidade e dificulta a manutenção.",
+          "Mistura interface e banco de dados no mesmo arquivo.",
+          "Reduz complexidade, facilita manutenção e permite trabalho separado.",
+          "Exige que tudo seja escrito em uma única linguagem.",
+          "Elimina a necessidade de um banco de dados."
+        ],
+        correta: "c"
+      }
+    ];
+
+    const letras = ["a","b","c","d","e"];
+
+    const app = document.getElementById("app");
+
+    function renderQuiz() {
+      app.innerHTML = "";
+      quiz.forEach((q, qi) => {
+        const fs = document.createElement("fieldset");
+        fs.className = "q";
+        fs.id = `q${q.n}`;
+
+        const h2 = document.createElement("h2");
+        h2.textContent = `${q.n}) ${q.titulo}`;
+        fs.appendChild(h2);
+
+        const det = document.createElement("details");
+        const sum = document.createElement("summary");
+        sum.textContent = "Resumo / Contexto";
+        det.appendChild(sum);
+        const p = document.createElement("p");
+        p.textContent = q.historia;
+        det.appendChild(p);
+        fs.appendChild(det);
+
+        const opts = document.createElement("div");
+        opts.className = "opts";
+
+        q.alternativas.forEach((txt, oi) => {
+          const wrap = document.createElement("label");
+          wrap.className = "opt";
+          const input = document.createElement("input");
+          input.type = "radio";
+          input.name = `q${q.n}`;
+          input.value = letras[oi];
+          const span = document.createElement("span");
+          span.textContent = `${letras[oi]}) ${txt}`;
+          wrap.appendChild(input);
+          wrap.appendChild(span);
+          opts.appendChild(wrap);
+        });
+
+        fs.appendChild(opts);
+        app.appendChild(fs);
+      });
+
+      document.getElementById("placar").textContent = `0/${quiz.length}`;
+      document.getElementById("gabaritoBox").style.display = "none";
+    }
+
+    function corrigir() {
+      let acertos = 0;
+
+      quiz.forEach((q) => {
+        const box = document.getElementById(`q${q.n}`);
+        box.classList.remove("correto", "errado");
+        const marcado = document.querySelector(`input[name="q${q.n}"]:checked`);
+        
+        const old = box.querySelector(".nota");
+        if (old) old.remove();
+
+        if (!marcado) {
+          const nota = document.createElement("div");
+          nota.className = "nota";
+          nota.textContent = "Sem resposta.";
+          box.appendChild(nota);
+          return;
+        }
+
+        if (marcado.value === q.correta) {
+          acertos++;
+          box.classList.add("correto");
+          const nota = document.createElement("div");
+          nota.className = "nota";
+          nota.textContent = "✔ Correto";
+          box.appendChild(nota);
+        } else {
+          box.classList.add("errado");
+          const nota = document.createElement("div");
+          nota.className = "nota";
+          nota.textContent = `✘ Incorreto — correto: (${q.correta})`;
+          box.appendChild(nota);
+        }
+      });
+
+      document.getElementById("placar").textContent = `${acertos}/${quiz.length}`;
+    }
+
+    function limpar() {
+      document.querySelectorAll('input[type="radio"]').forEach(i => i.checked = false);
+      document.querySelectorAll(".q").forEach(q => q.classList.remove("correto","errado"));
+      document.querySelectorAll(".nota").forEach(n => n.remove());
+      document.getElementById("placar").textContent = `0/${quiz.length}`;
+      document.getElementById("gabaritoBox").style.display = "none";
+    }
+
+    function mostrarGabarito() {
+      const linhas = quiz.map(q => `${q.n}. ${q.correta}`).join("\n");
+      const box = document.getElementById("gabaritoBox");
+      box.textContent = "Gabarito:\n" + linhas;
+      box.style.display = "block";
+      
+      quiz.forEach((q) => {
+        const input = document.querySelector(`input[name="q${q.n}"][value="${q.correta}"]`);
+        if (input) input.checked = true;
+      });
+    }
+
+    // eventos
+    document.getElementById("btnCorrigir").addEventListener("click", corrigir);
+    document.getElementById("btnLimpar").addEventListener("click", limpar);
+    document.getElementById("btnGabarito").addEventListener("click", mostrarGabarito);
+
+    // inicializa
+    renderQuiz();
+  </script>
+</body>
+</html>
